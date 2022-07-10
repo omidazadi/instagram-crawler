@@ -1,0 +1,16 @@
+{
+  "name": "instagram-crawler",
+  "version": "1.0.0",
+  "description": "A bot to retrieve highlights from Instagram",
+  "main": "create_server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Omid Azadi",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "mysql": "^2.18.1",
+    "tough-cookie": "^4.0.0"
+  }
+}

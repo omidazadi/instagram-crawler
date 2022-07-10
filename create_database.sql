@@ -1,0 +1,45 @@
+DROP DATABASE IF EXISTS HighlightDB;
+CREATE DATABASE HighlightDB;
+USE HighlightDB;
+SET foreign_key_checks = 0;
+
+CREATE TABLE IF NOT EXISTS Page(
+	id VARCHAR(100),
+	PRIMARY KEY(id)
+);
+
+CREATE TABLE IF NOT EXISTS Category(
+	name VARCHAR(100),
+	page VARCHAR(100),
+	PRIMARY KEY(page, name),
+	FOREIGN KEY(page)
+		REFERENCES Page(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Highlight(
+	id INT AUTO_INCREMENT,
+	category VARCHAR(100),
+	page VARCHAR(100),
+	name VARCHAR(100),
+	media INT,
+	PRIMARY KEY(id),
+	FOREIGN KEY(page, category)
+		REFERENCES Category(page, name)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
+	FOREIGN KEY(media)
+		REFERENCES Media(id)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Media(
+	id INT AUTO_INCREMENT,
+	url VARCHAR(500) NOT NULL,
+	contentType CHAR(1) NOT NULL,
+	PRIMARY KEY(id)
+);
+
+SET foreign_key_checks = 1;
