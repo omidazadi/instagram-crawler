@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS Highlight(
 	category VARCHAR(100),
 	page VARCHAR(100),
 	name VARCHAR(100),
-	media INT,
+	media INT NOT NULL,
 	PRIMARY KEY(id),
 	FOREIGN KEY(page, category)
 		REFERENCES Category(page, name)
@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS Media(
 	id INT AUTO_INCREMENT,
 	url VARCHAR(500) NOT NULL,
 	contentType CHAR(1) NOT NULL,
+	text VARCHAR(100),
 	PRIMARY KEY(id)
 );
 
