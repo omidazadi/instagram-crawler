@@ -10,6 +10,9 @@ const parse = nodeHtmlParser.parse;
 const instagram = axios.create({
 	baseURL: 'https://www.instagram.com',
 	withCredentials: true,
+	headers: {
+		'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0',
+	},
 });
 const quera = axios.create({
 	baseURL: 'https://www.quera.org',
@@ -36,11 +39,9 @@ function putInJar(cookies, url) {
 	}
 }
 
-function findCookie(url, name) {
-	let cookies = jar.getCookiesSync(url, {allPaths: true,});
+function findCookie(cookies, name) {
 	for (let i = 0; i < cookies.length; i++) {
 		if (cookies[i].key == name) {
-			console.log(cookies[i]);
 			return cookies[i];
 		}
 	}
@@ -48,11 +49,23 @@ function findCookie(url, name) {
 
 function handleCookies(response) {
 	let cookies = parseCookies(response.headers['set-cookie']);
-	console.log(cookies, '\n----------------------------------------------\n');
 	putInJar(cookies, response.config.baseURL + response.config.url);
 }
 
-quera({
+function setUserId(response) {
+	let userId = response.data.userId;
+	let loginCookie = new Cookie({
+		key: 'ds_user_id',
+		value: userId,
+		maxAge: 'Infinity',
+		domain: 'instagram.com',
+		path: '/',
+		secure: true,
+	});
+	jar.setCookieSync(loginCookie, instagram.defaults.baseURL);
+}
+
+/*quera({
 	method: 'get',
 	url: '',
 })
@@ -91,56 +104,95 @@ quera({
 	})
 	.catch((err) => {
 		console.log(err);
-	});
+	});*/
 
-/*instagram({
+instagram({
 	method: 'get',
 	url: '',
 })
 	.then((response) => {
+		console.log('Status: ' + response.status);
 		handleCookies(response);
 		let url = '/accounts/login';
 		let cookies = jar.getCookiesSync(instagram.defaults.baseURL + url);
+		let csrfToken = findCookie(cookies, 'csrftoken').value;
 		return instagram({
 			method: 'get',
 			url: url,
 			headers: {
-				Cookie: bakeCookie(cookies),
+				Cookies: jar.getCookieStringSync(instagram.defaults.baseURL + url),
 			},
 		});
 	})
 	.then((response) => {
+		console.log('Status: ' + response.status);
 		handleCookies(response);
 		let url = '/accounts/login/ajax/';
 		let cookies = jar.getCookiesSync(instagram.defaults.baseURL + url);
+		let csrfToken = findCookie(cookies, 'csrftoken').value;
+		let loginData = {
+			username: 'pooriabalenciaga',
+			enc_password: `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:zxcasdqwe123`,
+			queryParams: '{}',
+        		optIntoOneTap: 'false',
+		};
 		return instagram({
 			method: 'post',
 			url: url,
 			headers: {
-				Cookie: bakeCookie(cookies),
+				'content-type': 'application/x-www-form-urlencoded',
+				Cookies: jar.getCookieStringSync(instagram.defaults.baseURL + url),
+				'x-csrftoken': csrfToken,
+				'x-requested-with': 'XMLHttpRequest',
 			},
-			data: {
-				username: 'shiteater_balenciaga2',
-				enc_password: '#PWD_INSTAGRAM_BROWSER:0:0:zxcasdqwe123',
-			}
+			data: new URLSearchParams(Object.entries(loginData)).toString(),
 		});
 	})
 	.then((response) => {
+		console.log('Status: ' + response.status);
+		setUserId(response);
 		handleCookies(response);
 		let url = '/therock';
 		let cookies = jar.getCookiesSync(instagram.defaults.baseURL + url);
+		let csrfToken = findCookie(cookies, 'csrftoken').value;
 		return instagram({
 			method: 'get',
 			url: url,
 			headers: {
-				Cookie: bakeCookie(cookies),
+				Cookies: jar.getCookieStringSync(instagram.defaults.baseURL + url),
+				'x-csrftoken': csrfToken,
 			},
 		});
 	})
 	.then((response) => {
+		console.log('Status: ' + response.status);
 		handleCookies(response);
-		//console.log(response);
+		let url = '/accounts/logout/ajax/';
+		let cookies = jar.getCookiesSync(instagram.defaults.baseURL + url);
+		let csrfToken = findCookie(cookies, 'csrftoken').value;
+		let userId = findCookie(cookies, 'ds_user_id').value;
+		let logoutData = {
+			one_tap_app_login: '0',
+			user_id: userId,
+		};
+		return instagram({
+			method: 'post',
+			url: url,
+			headers: {
+				'content-type': 'application/x-www-form-urlencoded',
+				Cookie: jar.getCookieStringSync(instagram.defaults.baseURL + url),
+				'x-csrftoken': csrfToken,
+				'x-requested-with': 'XMLHttpRequest',
+			},
+			data: new URLSearchParams(Object.entries(logoutData)).toString(),
+		});
+	})
+	.then((response) => {
+		console.log(response);
 	})
 	.catch((err) => {
 		console.log(err);
-	})*/
+	});
+
+
+
