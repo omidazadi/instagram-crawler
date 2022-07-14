@@ -3,7 +3,6 @@ const axios = require('axios');
 const tough = require('tough-cookie');
 const Cookie = tough.Cookie;
 const CookieJar = tough.CookieJar;
-const fs = require('fs');
 const nodeHtmlParser = require('node-html-parser');
 const parse = nodeHtmlParser.parse;
 

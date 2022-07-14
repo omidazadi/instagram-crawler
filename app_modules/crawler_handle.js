@@ -3,15 +3,12 @@ const axios = require('axios');
 const tough = require('tough-cookie');
 const Cookie = tough.Cookie;
 const CookieJar = tough.CookieJar;
-const fs = require('fs');
-const nodeHtmlParser = require('node-html-parser');
-const parse = nodeHtmlParser.parse;
 
 const instagram = axios.create({
 	baseURL: 'https://www.instagram.com',
 	withCredentials: true,
 	headers: {
-		'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0',
+		//'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0',
 	},
 });
 let jar = new CookieJar();
@@ -70,10 +67,10 @@ function getUserId() {
 	return findCookie('ds_user_id').value;
 }
 
-function getLoginData() {
+function getLoginData(credentials) {
 	return {
-		username: 'pooriabalenciaga',
-		enc_password: `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:zxcasdqwe123`,
+		username: credentials.username,
+		enc_password: `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${credentials.password}`,
 		queryParams: '{}',
 		optIntoOneTap: 'false',
 	};
@@ -86,20 +83,15 @@ function getLogoutData() {
 	};
 }
 
-function logStatus(response) {
-	console.log('Status: ' + response.status);
-}
-
 function logMessage(message) {
 	console.log(message);
 }
 
-function logFetch(url) {
-	console.log('Fetching ' + url);
+function logStatus(response) {
+	logMessage('Status: ' + response.status);
 }
 
-function login() {
-	logMessage('Logging in...');
+function login(credentials = {username: 'pooriabalenciaga', password: 'zxcasdqwe123',}) {
 	return instagram({
 		method: 'get',
 		url: '/accounts/login',
@@ -109,7 +101,7 @@ function login() {
 		handleCookies(response);
 		let url = '/accounts/login/ajax/';
 		let csrfToken = getCsrfToken();
-		let loginData = getLoginData();
+		let loginData = getLoginData(credentials);
 		return instagram({
 			method: 'post',
 			url: url,
@@ -123,19 +115,29 @@ function login() {
 		});
 	})
 	.then((response) => {
+		console.log(response);
 		logStatus(response);
-		logMessage('Successfully logged in!');
 		handleCookies(response);
 		setUserId(response);
+		
+		let data;
+		if (response.hasOwnProperty('data')) {
+			data = response.data;
+		}
+		else {
+			data = {};
+		}
 		return new Promise((resolve, reject) => {
-			resolve();
+			resolve({ status: response.status, data: data });
 		});
+	})
+	.catch((err) => {
+		console.log(err);
 	});
 }
 
 function logout() {
-	logMessage('Logging out...');
-	let url = '/accounts/login/ajax/';
+	let url = '/accounts/logout/ajax/';
 	let csrfToken = getCsrfToken();
 	let logoutData = getLogoutData();
 	return instagram({
@@ -150,16 +152,28 @@ function logout() {
 		data: new URLSearchParams(Object.entries(logoutData)).toString(),
 	})
 	.then((response) => {
+		console.log(response);
 		logStatus(response);
-		logMessage('Logout compelete.');
+		
+		let data;
+		if (response.hasOwnProperty('data')) {
+			data = response.data;
+		}
+		else {
+			data = {};
+		}
 		return new Promise((resolve, reject) => {
-			jar.removeAllCookies(resolve);
+			jar.removeAllCookies(() => {
+				resolve({ status: response.status, data: data });
+			});
 		});
+	})
+	.catch((err) => {
+		console.log(err);
 	});
 }
 
 function fetchPage(url) {
-	logFetch(url);
 	let csrfToken = getCsrfToken();
 	return instagram({
 		method: 'get',
@@ -170,12 +184,15 @@ function fetchPage(url) {
 		},
 	})
 	.then((response) => {
+		console.log(response);
 		logStatus(response);
-		logMessage('Fetched the url.');
 		handleCookies(response);
 		return new Promise((resolve, reject) => {
-			resolve(response.data);
+			resolve({ status: response.status, data: response.data });
 		});
+	})
+	.catch((err) => {
+		console.log(err);
 	});
 }
 
